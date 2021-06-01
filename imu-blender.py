@@ -10,11 +10,25 @@ import csv
 import socket
 import smbus
 from pycomms import PyComms
+from gpiozero import LED
 
-# Sensor initialization
-mpu = mpu6050.MPU6050()
-mpu.dmpInitialize()
-mpu.setDMPEnabled(True)
+b1 = LED(17)
+b2 = LED(27)
+b3 = LED(22)
+
+def select_bone(bone):    
+    if bone == 0:
+        b1.on
+        b2.off
+        b3.off
+    elif bone == 1:
+        b1.off
+        b2.on
+        b3.off
+    elif bone == 2:
+        b1.off
+        b2.off
+        b3.on
 
 # Send UDP Data
 def send_data(msg):
@@ -24,8 +38,6 @@ def send_data(msg):
         sock.close()
         print "Connection err!"
     
-# get expected DMP packet size for later comparison
-packetSize = mpu.dmpGetFIFOPacketSize() 
 
 
 # UDP socket instance
@@ -36,48 +48,61 @@ with open("imu-blender.cfg", 'rb') as f:
     file = csv.DictReader(f)
     for rows in file:
         REMOTE_IP = rows['remote_ip']
-	DST_PORT = int(rows['dst_port'])
-	DEBUG = rows['debug']
+        DST_PORT = int(rows['dst_port'])
+        DEBUG = rows['debug']
+        bones = int(rows['bones']) #amount of bones in the structure
+        print("the amount of bones: {}".format(bones))
+
+# Sensor initialization // all mpu's are considered the same, the address will be changed
+packetSize = []
+mpu = mpu6050.MPU6050() #one sensor object to control all sensors
+for bone in range(bones):
+    #select the new bone
+    select_bone(bone)
+    mpu.dmpInitialize()
+    mpu.setDMPEnabled(True)
+    # get expected DMP packet size for later comparison
+    packetSize.append(mpu.dmpGetFIFOPacketSize())
 
 print ("IMU Sensor started (CTRL-C to stop)!")
 
 while True:
-    # Get INT_STATUS byte
-    mpuIntStatus = mpu.getIntStatus()
-  
-    # check for DMP data ready interrupt (this should happen frequently) 
-    if mpuIntStatus >= 2:
-        # get current FIFO count
-        fifoCount = mpu.getFIFOCount()
-        
-        # check for overflow (this should never happen unless our code is too inefficient)
-        if fifoCount == 1024:
-            # reset so we can continue cleanly
-            mpu.resetFIFO()
-            print('FIFO overflow!')
-            
-            
-        # wait for correct available data length, should be a VERY short wait
-        fifoCount = mpu.getFIFOCount()
-        while fifoCount < packetSize:
+    for bone in range(bones):
+        #select the new bone
+        select_bone(bone)
+        # Get INT_STATUS byte
+        mpuIntStatus = mpu.getIntStatus()
+    
+        # check for DMP data ready interrupt (this should happen frequently) 
+        if mpuIntStatus >= 2:
+            # get current FIFO count
             fifoCount = mpu.getFIFOCount()
-        
-        result = mpu.getFIFOBytes(packetSize)
-        # Get quaternio, q return y, x, z, w
-        q = mpu.dmpGetQuaternion(result)
+            
+            # check for overflow (this should never happen unless our code is too inefficient)
+            if fifoCount == 1024:
+                # reset so we can continue cleanly
+                mpu.resetFIFO()
+                print('FIFO overflow!')
+                
+                
+            # wait for correct available data length, should be a VERY short wait
+            fifoCount = mpu.getFIFOCount()
+            while fifoCount < packetSize[bone]:
+                fifoCount = mpu.getFIFOCount()
+            
+            result = mpu.getFIFOBytes(packetSize[bone])
+            # Get quaternio, q return y, x, z, w
+            q = mpu.dmpGetQuaternion(result)
 
-        x = "{0:.6f}".format(q['x'])
-	y = "{0:.6f}".format(q['y'])
-	z = "{0:.6f}".format(q['z'])
-	w = "{0:.6f}".format(q['w'])
+            x = "{0:.6f}".format(q['x'])
+            y = "{0:.6f}".format(q['y'])
+            z = "{0:.6f}".format(q['z'])
+            w = "{0:.6f}".format(q['w'])
 
-        if DEBUG == "1":
-           print (x),
-	   print (y),
-	   print (z),
-	   print (w)
+            if DEBUG == "1":
+                print (bone + "," + str(x) + "," + str(y) + "," + str(z) + "," + str(w))
 
-	# Sends quaternion through UDP
-        send_data(str(x) + "," + str(y) + "," + str(z) + "," + str(w))
-        fifoCount -= packetSize  
+            # Sends quaternion through UDP
+            send_data(bone + "," + str(x) + "," + str(y) + "," + str(z) + "," + str(w))
+            fifoCount -= packetSize[bone]
 
