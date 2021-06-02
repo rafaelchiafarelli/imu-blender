@@ -18,25 +18,30 @@ b3 = LED(22)
 
 def select_bone(bone):    
     if bone == 0:
-        b1.on
-        b2.off
-        b3.off
-    elif bone == 1:
         b1.off
         b2.on
-        b3.off
-    elif bone == 2:
-        b1.off
+        b3.on
+    elif bone == 1:
+        b1.on
         b2.off
         b3.on
+    elif bone == 2:
+        b1.on
+        b2.on
+        b3.off
+    else:
+        b1.on
+        b2.on
+        b3.on
+
 
 # Send UDP Data
 def send_data(msg):
     try:
-        sock.sendto(msg, (REMOTE_IP, DST_PORT))
+        sock.sendto(bytes(msg,'utf-8'), (REMOTE_IP, DST_PORT))
     except socket.error as err:
         sock.close()
-        print "Connection err!"
+        print("Connection err!")
     
 
 
@@ -44,7 +49,7 @@ def send_data(msg):
 sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
 
 # Read configuration from file (csv file format)
-with open("imu-blender.cfg", 'rb') as f:
+with open("imu-blender.cfg", 'r') as f:
     file = csv.DictReader(f)
     for rows in file:
         REMOTE_IP = rows['remote_ip']
@@ -87,22 +92,20 @@ while True:
                 
             # wait for correct available data length, should be a VERY short wait
             fifoCount = mpu.getFIFOCount()
-            while fifoCount < packetSize[bone]:
-                fifoCount = mpu.getFIFOCount()
-            
-            result = mpu.getFIFOBytes(packetSize[bone])
-            # Get quaternio, q return y, x, z, w
-            q = mpu.dmpGetQuaternion(result)
+            if fifoCount > packetSize[bone] or fifoCount == packetSize[bone]:
+                result = mpu.getFIFOBytes(packetSize[bone])
+                # Get quaternio, q return y, x, z, w
+                q = mpu.dmpGetQuaternion(result)
 
-            x = "{0:.6f}".format(q['x'])
-            y = "{0:.6f}".format(q['y'])
-            z = "{0:.6f}".format(q['z'])
-            w = "{0:.6f}".format(q['w'])
+                x = "{0:.6f}".format(q['x'])
+                y = "{0:.6f}".format(q['y'])
+                z = "{0:.6f}".format(q['z'])
+                w = "{0:.6f}".format(q['w'])
 
-            if DEBUG == "1":
-                print (bone + "," + str(x) + "," + str(y) + "," + str(z) + "," + str(w))
+                if DEBUG == "1":
+                    print (str(bone) + "," + str(x) + "," + str(y) + "," + str(z) + "," + str(w))
 
-            # Sends quaternion through UDP
-            send_data(bone + "," + str(x) + "," + str(y) + "," + str(z) + "," + str(w))
-            fifoCount -= packetSize[bone]
+                # Sends quaternion through UDP
+                #send_data(str(bone) + "," + str(x) + "," + str(y) + "," + str(z) + "," + str(w))
+                fifoCount -= packetSize[bone]
 
