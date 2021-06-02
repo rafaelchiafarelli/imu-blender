@@ -56,7 +56,7 @@ with open("imu-blender.cfg", 'r') as f:
         DST_PORT = int(rows['dst_port'])
         DEBUG = rows['debug']
         bones = int(rows['bones']) #amount of bones in the structure
-        print("the amount of bones: {}".format(bones))
+        print("the amount of bones: {}, the debug:{}".format(bones,DEBUG))
 
 # Sensor initialization // all mpu's are considered the same, the address will be changed
 packetSize = []
@@ -96,16 +96,16 @@ while True:
                 result = mpu.getFIFOBytes(packetSize[bone])
                 # Get quaternio, q return y, x, z, w
                 q = mpu.dmpGetQuaternion(result)
-
-                x = "{0:.6f}".format(q['x'])
-                y = "{0:.6f}".format(q['y'])
-                z = "{0:.6f}".format(q['z'])
-                w = "{0:.6f}".format(q['w'])
+                data = mpu.dmpGetGravity(q)
+                x = "{0:.6f}".format(data['x'])
+                y = "{0:.6f}".format(data['y'])
+                z = "{0:.6f}".format(data['z'])
+                
 
                 if DEBUG == "1":
-                    print (str(bone) + "," + str(x) + "," + str(y) + "," + str(z) + "," + str(w))
+                    print (str(bone) + "," + str(x) + "," + str(y) + "," + str(z))
 
                 # Sends quaternion through UDP
-                #send_data(str(bone) + "," + str(x) + "," + str(y) + "," + str(z) + "," + str(w))
+                #send_data(str(bone) + "," + str(x) + "," + str(y) + "," + str(z))
                 fifoCount -= packetSize[bone]
 
