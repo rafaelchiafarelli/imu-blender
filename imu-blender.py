@@ -11,7 +11,7 @@ import socket
 import smbus
 from pycomms import PyComms
 from gpiozero import LED
-
+from time import sleep
 b1 = LED(17)
 b2 = LED(27)
 b3 = LED(22)
@@ -33,6 +33,7 @@ def select_bone(bone):
         b1.on
         b2.on
         b3.on
+    sleep(0.01)
 
 # Send UDP Data
 def send_data(msg):
@@ -61,6 +62,8 @@ mpu = mpu6050.MPU6050() #one sensor object to control all sensors
 for bone in range(bones):
     #select the new bone
     select_bone(bone)
+    print("configuring bone:{}".format(bone))
+    sleep(0.5)
     mpu.dmpInitialize()
     mpu.setDMPEnabled(True)
     # get expected DMP packet size for later comparison
@@ -92,7 +95,7 @@ while True:
                 # Get quaternio, q return y, x, z, w
                 q = mpu.dmpGetQuaternion(result)
                 data = mpu.dmpGetGravity(q)
-                angle_data = mpu.dmpGetYawPitchRoll(q)
+                angle_data = mpu.dmpGetYawPitchRoll(q,data)
                 x = "{0:.6f}".format(data['x'])
                 y = "{0:.6f}".format(data['y'])
                 z = "{0:.6f}".format(data['z'])
