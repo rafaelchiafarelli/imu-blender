@@ -88,25 +88,24 @@ while True:
                 # reset so we can continue cleanly
                 mpu.resetFIFO()
                 print('FIFO overflow!')
-            # wait for correct available data length, should be a VERY short wait
-            fifoCount = mpu.getFIFOCount()
-            if fifoCount > packetSize[bone] or fifoCount == packetSize[bone]:
-                result = mpu.getFIFOBytes(packetSize[bone])
-                # Get quaternio, q return y, x, z, w
-                q = mpu.dmpGetQuaternion(result)
-                data = mpu.dmpGetGravity(q)
-                angle_data = mpu.dmpGetYawPitchRoll(q,data)
-                x = "{0:.6f}".format(data['x'])
-                y = "{0:.6f}".format(data['y'])
-                z = "{0:.6f}".format(data['z'])
-                yaw = "{0:.6f}".format(angle_data['yaw'])
-                pitch = "{0:.6f}".format(angle_data['pitch'])
-                roll = "{0:.6f}".format(angle_data['roll'])
+            else:
+                if fifoCount > packetSize[bone] or fifoCount == packetSize[bone]:
+                    result = mpu.getFIFOBytes(packetSize[bone])
+                    # Get quaternio, q return y, x, z, w
+                    q = mpu.dmpGetQuaternion(result)
+                    data = mpu.dmpGetGravity(q)
+                    angle_data = mpu.dmpGetYawPitchRoll(q,data)
+                    x = "{0:.6f}".format(data['x'])
+                    y = "{0:.6f}".format(data['y'])
+                    z = "{0:.6f}".format(data['z'])
+                    yaw = "{0:.6f}".format(angle_data['yaw'])
+                    pitch = "{0:.6f}".format(angle_data['pitch'])
+                    roll = "{0:.6f}".format(angle_data['roll'])
 
-                if DEBUG == "1":
-                    print ("b:" + str(bone) + ", x:" + str(x) + ", y:" + str(y) + ", z:" + str(z) + ", w:" + str(yaw) + ", p:" + str(pitch) + ", r:" + str(roll))
+                    if DEBUG == "1":
+                        print ("b:" + str(bone) + ", x:" + str(x) + ", y:" + str(y) + ", z:" + str(z) + ", w:" + str(yaw) + ", p:" + str(pitch) + ", r:" + str(roll))
 
-                # Sends quaternion through UDP
-                #send_data(str(bone) + "," + str(x) + "," + str(y) + "," + str(z))
-                fifoCount -= packetSize[bone]
+                    # Sends quaternion through UDP
+                    #send_data(str(bone) + "," + str(x) + "," + str(y) + "," + str(z))
+                    mpu.resetFIFO()
 
