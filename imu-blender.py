@@ -34,7 +34,6 @@ def select_bone(bone):
         b2.on
         b3.on
 
-
 # Send UDP Data
 def send_data(msg):
     try:
@@ -42,8 +41,6 @@ def send_data(msg):
     except socket.error as err:
         sock.close()
         print("Connection err!")
-    
-
 
 # UDP socket instance
 sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
@@ -88,8 +85,6 @@ while True:
                 # reset so we can continue cleanly
                 mpu.resetFIFO()
                 print('FIFO overflow!')
-                
-                
             # wait for correct available data length, should be a VERY short wait
             fifoCount = mpu.getFIFOCount()
             if fifoCount > packetSize[bone] or fifoCount == packetSize[bone]:
@@ -97,13 +92,16 @@ while True:
                 # Get quaternio, q return y, x, z, w
                 q = mpu.dmpGetQuaternion(result)
                 data = mpu.dmpGetGravity(q)
+                angle_data = mpu.dmpGetYawPitchRoll(q)
                 x = "{0:.6f}".format(data['x'])
                 y = "{0:.6f}".format(data['y'])
                 z = "{0:.6f}".format(data['z'])
-                
+                yaw = "{0:.6f}".format(angle_data['yaw'])
+                pitch = "{0:.6f}".format(angle_data['pitch'])
+                roll = "{0:.6f}".format(angle_data['roll'])
 
                 if DEBUG == "1":
-                    print (str(bone) + "," + str(x) + "," + str(y) + "," + str(z))
+                    print ("b:" + str(bone) + ", x:" + str(x) + ", y:" + str(y) + ", z:" + str(z) + ", w:" + str(yaw) + ", p:" + str(pitch) + ", r:" + str(roll))
 
                 # Sends quaternion through UDP
                 #send_data(str(bone) + "," + str(x) + "," + str(y) + "," + str(z))
