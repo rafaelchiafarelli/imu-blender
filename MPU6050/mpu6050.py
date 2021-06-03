@@ -1540,7 +1540,23 @@ class MPU6050:
             'roll' : atan(g['y'] / sqrt(g['x'] * g['x'] + g['z'] * g['z']))}
             
         return data 
+    def dmpGet(self,q):
+        x=float(2 * (q['x'] * q['z'] - q['w'] * q['y']))
+        y=float(2 * (q['w'] * q['x'] + q['y'] * q['z']))
+        z=float(q['w'] * q['w'] - q['x'] * q['x'] - q['y'] * q['y'] + q['z'] * q['z'])
+        sq = sqrt( x * x + z * z)
+        data = {
+            'x':x,
+            'y':y,
+            'z':z,
+            'yaw' : atan2(2 * x * q['y'] - 2 * q['w'] * q['z'], 2 * q['w'] * q['w'] + 2 * q['x'] * q['x'] - 1),
+            # pitch: (nose up/down, about Y axis)
+            'pitch' : atan(x / sq),
+            # roll: (tilt left/right, about X axis)
+            'roll' : atan(y /sq)}
+        return data
 
+        
     def dmpProcessFIFOPacket(self):
         pass
         

@@ -90,17 +90,18 @@ while True:
                 print('FIFO overflow!')
             else:
                 if fifoCount > packetSize[bone] or fifoCount == packetSize[bone]:
-                    result = mpu.getFIFOBytes(packetSize[bone])
+                    result = mpu.getFIFOBytes(fifoCount)
                     # Get quaternio, q return y, x, z, w
                     q = mpu.dmpGetQuaternion(result)
-                    data = mpu.dmpGetGravity(q)
-                    angle_data = mpu.dmpGetYawPitchRoll(q,data)
+                    data = mpu.dmpGet(q)
+
                     x = "{0:.6f}".format(data['x'])
                     y = "{0:.6f}".format(data['y'])
                     z = "{0:.6f}".format(data['z'])
-                    yaw = "{0:.6f}".format(angle_data['yaw'])
-                    pitch = "{0:.6f}".format(angle_data['pitch'])
-                    roll = "{0:.6f}".format(angle_data['roll'])
+
+                    yaw = "{0:.6f}".format(data['yaw'])
+                    pitch = "{0:.6f}".format(data['pitch'])
+                    roll = "{0:.6f}".format(data['roll'])
 
                     if DEBUG == "1":
                         print ("b:" + str(bone) + ", x:" + str(x) + ", y:" + str(y) + ", z:" + str(z) + ", w:" + str(yaw) + ", p:" + str(pitch) + ", r:" + str(roll))
