@@ -77,37 +77,41 @@ while True:
         select_bone(bone)
         # Get INT_STATUS byte
         mpuIntStatus = mpu.getIntStatus()
-    
-        # check for DMP data ready interrupt (this should happen frequently) 
-        if mpuIntStatus >= 2:
-            # get current FIFO count
-            fifoCount = mpu.getFIFOCount()
-            
-            # check for overflow (this should never happen unless our code is too inefficient)
-            if fifoCount == 1024:
-                # reset so we can continue cleanly
-                mpu.resetFIFO()
-                print('FIFO overflow!')
-            else:
-                if fifoCount > packetSize[bone] or fifoCount == packetSize[bone]:
-                    result = mpu.getFIFOBytes(fifoCount)
-                    # Get quaternio, q return y, x, z, w
-                    for shift in range(0,fifoCount/packetSize[bone]):
-                        q = mpu.dmpGetQuaternion(result[shift*13:13])
-                        data = mpu.dmpGet(q)
+        if mpuIntStatus >= 0x10:
+            # reset so we can continue cleanly
+            mpu.resetFIFO()
+            print('FIFO overflow!')
+        else:
+            # check for DMP data ready interrupt (this should happen frequently) 
+            if mpuIntStatus >= 1:
+                # get current FIFO count
+                fifoCount = mpu.getFIFOCount()
+                
+                # check for overflow (this should never happen unless our code is too inefficient)
+                if fifoCount == 1024:
+                    # reset so we can continue cleanly
+                    mpu.resetFIFO()
+                    print('FIFO overflow!')
+                else:
+                    if fifoCount > packetSize[bone] or fifoCount == packetSize[bone]:
+                        result = mpu.getFIFOBytes(fifoCount)
+                        # Get quaternio, q return y, x, z, w
+                        for shift in range(0,fifoCount/packetSize[bone],42):
+                            q = mpu.dmpGetQuaternion(result[shift:])
+                            data = mpu.dmpGet(q)
 
-                        x = "{0:.6f}".format(data['x'])
-                        y = "{0:.6f}".format(data['y'])
-                        z = "{0:.6f}".format(data['z'])
+                            x = "{0:.6f}".format(data['x'])
+                            y = "{0:.6f}".format(data['y'])
+                            z = "{0:.6f}".format(data['z'])
 
-                        yaw = "{0:.6f}".format(data['yaw'])
-                        pitch = "{0:.6f}".format(data['pitch'])
-                        roll = "{0:.6f}".format(data['roll'])
+                            yaw = "{0:.6f}".format(data['yaw'])
+                            pitch = "{0:.6f}".format(data['pitch'])
+                            roll = "{0:.6f}".format(data['roll'])
 
-                        if DEBUG == "1":
-                            print ("b:" + str(bone) + ", i:" + str(x) + ", j:" + str(y) + ", k:" + str(z) + ", y:" + str(yaw) + ", p:" + str(pitch) + ", r:" + str(roll))
+                            if DEBUG == "1":
+                                print ("b:" + str(bone) + ", i:" + str(x) + ", j:" + str(y) + ", k:" + str(z) + ", y:" + str(yaw) + ", p:" + str(pitch) + ", r:" + str(roll))
 
-                        # Sends quaternion through UDP
-                        #send_data("{b:" + str(bone) + ", i:" + str(x) + ", j:" + str(y) + ", k:" + str(z) + ", y:" + str(yaw) + ", p:" + str(pitch) + ", r:" + str(roll)+"}")
-                        
+                            # Sends quaternion through UDP
+                            #send_data("{b:" + str(bone) + ", i:" + str(x) + ", j:" + str(y) + ", k:" + str(z) + ", y:" + str(yaw) + ", p:" + str(pitch) + ", r:" + str(roll)+"}")
+                            
 
