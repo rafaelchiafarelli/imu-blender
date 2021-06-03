@@ -92,21 +92,22 @@ while True:
                 if fifoCount > packetSize[bone] or fifoCount == packetSize[bone]:
                     result = mpu.getFIFOBytes(fifoCount)
                     # Get quaternio, q return y, x, z, w
-                    q = mpu.dmpGetQuaternion(result)
-                    data = mpu.dmpGet(q)
+                    for shift in range(0,fifoCount/packetSize[bone]):
+                        q = mpu.dmpGetQuaternion(result[shift*13:13])
+                        data = mpu.dmpGet(q)
 
-                    x = "{0:.6f}".format(data['x'])
-                    y = "{0:.6f}".format(data['y'])
-                    z = "{0:.6f}".format(data['z'])
+                        x = "{0:.6f}".format(data['x'])
+                        y = "{0:.6f}".format(data['y'])
+                        z = "{0:.6f}".format(data['z'])
 
-                    yaw = "{0:.6f}".format(data['yaw'])
-                    pitch = "{0:.6f}".format(data['pitch'])
-                    roll = "{0:.6f}".format(data['roll'])
+                        yaw = "{0:.6f}".format(data['yaw'])
+                        pitch = "{0:.6f}".format(data['pitch'])
+                        roll = "{0:.6f}".format(data['roll'])
 
-                    if DEBUG == "1":
-                        print ("b:" + str(bone) + ", x:" + str(x) + ", y:" + str(y) + ", z:" + str(z) + ", w:" + str(yaw) + ", p:" + str(pitch) + ", r:" + str(roll))
+                        if DEBUG == "1":
+                            print ("b:" + str(bone) + ", i:" + str(x) + ", j:" + str(y) + ", k:" + str(z) + ", y:" + str(yaw) + ", p:" + str(pitch) + ", r:" + str(roll))
 
-                    # Sends quaternion through UDP
-                    #send_data(str(bone) + "," + str(x) + "," + str(y) + "," + str(z))
-                    mpu.resetFIFO()
+                        # Sends quaternion through UDP
+                        #send_data("{b:" + str(bone) + ", i:" + str(x) + ", j:" + str(y) + ", k:" + str(z) + ", y:" + str(yaw) + ", p:" + str(pitch) + ", r:" + str(roll)+"}")
+                        
 
